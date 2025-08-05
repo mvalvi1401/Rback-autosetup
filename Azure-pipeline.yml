@@ -1,0 +1,86 @@
+# ============================================ Azure-pipeline-yml ============================================
+
+trigger:
+  branches:
+   include:
+     - main
+
+
+
+
+variables:
+   csopeType: 'ResourceGroup'
+   scopeName: 'your-prod-rg'
+   userprincipalName: 'manojvalvi143@gmail.com'
+
+
+
+stages:
+- stage: dev
+  displayName: 'Dev Enviornment'
+  jobs:
+  - job: Devjob
+    pool;
+      vmimage: 'Windows-latest'
+    steps:
+    - task: Azurepowershell@5
+      inputs: 
+      Azuresubscription: 'AzureSP-Connection'
+      ScriptType: 'Filepath'
+      Scriptpath:  'scripts/assign-role.ps1'
+      ScriptArguments: >
+        -UserPrincipalName $(userprincipalName)
+        -Role Reader
+        -Stage dev
+        -ScopeType $(scopetype)
+        -Scopename $(scopeName)
+      azurepowershellVersion: 'Latestversion'
+
+
+
+    - stage: QA 
+      displayName: 'QA Envireonment'
+      dependsOn: dev
+      jobs:
+      - job: QAjob
+        pool:
+         vmimage: 'Windows-latest'
+      steps: 
+      - task: Azurepowershell@5
+        inputs:
+         Azuresubscription: 'AzureSP-Connection'
+         ScriptType: 'Filepath'
+         Scriptpath: 'scripts/assign-role.ps1'
+         ScriptArguments: >
+            -UserPrincipalName $(userprincipalName)
+            -Role contributor
+            -stage QA
+            -ScopeType $(scopeType)
+            -ScopeName $(scopeName)
+         azurepowershellVersion: 'Latestversion'
+
+- stage: 'prod' 
+  displayName: 'production Enviornment' 
+  dependsOn: QA 
+  approval: 
+    approvals:
+      -reviewers:
+          - name: 'manojvalvi143@gmail.com'
+  jobs:
+  - job: prodjob
+    pool:
+      vmimage: 'Windows-latest'
+    steps:
+    - task: AzurePowershell@5
+      inputs:
+        Azuresubscription: 'AzureSP-Connection' 
+        ScriptType: 'Filepath'
+        ScriptArguments: >
+          -UserPrincipalName $(userprincipalName)
+          -Role Owner
+          -Stage prod 
+          -scopeType $(scopeType)
+          -scopename $(scopeName)
+        azurepowershellVersion: 'Latestversion'
+
+       
