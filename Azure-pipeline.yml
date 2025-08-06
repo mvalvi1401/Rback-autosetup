@@ -20,7 +20,7 @@ stages:
   displayName: 'Dev Enviornment'
   jobs:
   - job: Devjob
-    pool;
+    pool:
       vmimage: 'Windows-latest'
     steps:
     - task: Azurepowershell@5
